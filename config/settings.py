@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 from django.conf.global_settings import AUTH_USER_MODEL
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'lms',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -81,9 +83,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'drfhomework',
-        'USER': 'postgres',
-        'PASSWORD': '2522'
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
     }
 }
 
