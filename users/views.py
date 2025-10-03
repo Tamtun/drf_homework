@@ -49,7 +49,22 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 
+class UserProfileSerializer:
+    pass
+
+
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return UserProfileSerializer
+        return UserSerializer
