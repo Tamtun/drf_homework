@@ -4,12 +4,13 @@ from rest_framework.serializers import ModelSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from users.models import Payment
+from lms.models import Payment
 from users.serializers import PaymentSerializer, UserSerializer
 from users.filters import PaymentFilter
 from users.permissions import IsOwnerOrModerator
 
 User = get_user_model()
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer

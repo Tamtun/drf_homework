@@ -1,13 +1,15 @@
 from rest_framework import viewsets, generics
+from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from users.permissions import IsModerator, IsOwnerOrModerator
-from .models import Course, Lesson, Subscription
-from .serializers import CourseSerializer, LessonSerializer
+from .models import Course, Lesson, Subscription, Payment
+from .serializers import CourseSerializer, LessonSerializer, CreatePaymentRequestSerializer
 from .paginators import StandardResultsSetPagination
+from .services import create_stripe_product, create_stripe_price, create_checkout_session
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -75,3 +77,24 @@ class ToggleSubscriptionView(APIView):
             message = 'подписка добавлена'
 
         return Response({'message': message})
+
+class CreatePaymentView(CreateAPIView):
+    serializer_class = CreatePaymentRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        course_id = serializer.validated_data['course_id']
+        course = Course.objects.get(id=course_id)
+
+        session_url = create_checkout_session(course)
+
+        Payment.objects.create(
+            user=request.user,
+            course=course,
+            stripe_payment_url=session_url,
+        )
+
+        return Response({'payment_url': session_url})

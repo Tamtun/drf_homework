@@ -1,10 +1,10 @@
 import django_filters
-from users.models import Payment
+from lms.models import Payment
 
 class PaymentFilter(django_filters.FilterSet):
     ordering = django_filters.OrderingFilter(
-        fields=(('date', 'date'),),
-        field_labels={'date': 'Дата оплаты'},
+        fields=(('created_at', 'created_at'),),
+        field_labels={'created_at': 'Дата оплаты'},
         label='Сортировка'
     )
 
@@ -12,6 +12,4 @@ class PaymentFilter(django_filters.FilterSet):
         model = Payment
         fields = {
             'course': ['exact'],
-            'lesson': ['exact'],
-            'method': ['exact'],
         }
