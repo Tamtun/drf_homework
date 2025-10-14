@@ -10,12 +10,14 @@ from .models import Course, Lesson, Subscription, Payment
 from .serializers import CourseSerializer, LessonSerializer, CreatePaymentRequestSerializer
 from .paginators import StandardResultsSetPagination
 from .services import create_stripe_product, create_stripe_price, create_checkout_session
+from lms.tasks import send_course_update_email
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
     pagination_class = StandardResultsSetPagination
+
     def get_queryset(self):
         user = self.request.user
         if user.groups.filter(name='moderators').exists():
@@ -28,6 +30,17 @@ class CourseViewSet(viewsets.ModelViewSet):
         elif self.action in ['list', 'create']:
             self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        print("Курс обновлён:", course.title)
+
+        subscribers = Subscription.objects.filter(course=course)
+        emails = [sub.user.email for sub in subscribers if sub.user.email]
+
+        if emails:
+            print("Запускаем задачу Celery")
+            send_course_update_email.delay(course.id, emails)
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
