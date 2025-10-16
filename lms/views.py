@@ -1,19 +1,23 @@
 from rest_framework import viewsets, generics
+from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from users.permissions import IsModerator, IsOwnerOrModerator
-from .models import Course, Lesson, Subscription
-from .serializers import CourseSerializer, LessonSerializer
+from .models import Course, Lesson, Subscription, Payment
+from .serializers import CourseSerializer, LessonSerializer, CreatePaymentRequestSerializer
 from .paginators import StandardResultsSetPagination
+from .services import create_stripe_product, create_stripe_price, create_checkout_session
+from lms.tasks import send_course_update_email
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
     pagination_class = StandardResultsSetPagination
+
     def get_queryset(self):
         user = self.request.user
         if user.groups.filter(name='moderators').exists():
@@ -26,6 +30,17 @@ class CourseViewSet(viewsets.ModelViewSet):
         elif self.action in ['list', 'create']:
             self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        print("Курс обновлён:", course.title)
+
+        subscribers = Subscription.objects.filter(course=course)
+        emails = [sub.user.email for sub in subscribers if sub.user.email]
+
+        if emails:
+            print("Запускаем задачу Celery")
+            send_course_update_email.delay(course.id, emails)
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
@@ -75,3 +90,24 @@ class ToggleSubscriptionView(APIView):
             message = 'подписка добавлена'
 
         return Response({'message': message})
+
+class CreatePaymentView(CreateAPIView):
+    serializer_class = CreatePaymentRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        course_id = serializer.validated_data['course_id']
+        course = Course.objects.get(id=course_id)
+
+        session_url = create_checkout_session(course)
+
+        Payment.objects.create(
+            user=request.user,
+            course=course,
+            stripe_payment_url=session_url,
+        )
+
+        return Response({'payment_url': session_url})

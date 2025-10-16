@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Payment
+from lms.models import Payment
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -7,7 +7,7 @@ User = get_user_model()
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'date', 'course', 'lesson', 'amount', 'method']
+        fields = ['id', 'course', 'stripe_session_id', 'stripe_payment_url', 'created_at']
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
