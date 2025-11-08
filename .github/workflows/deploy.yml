@@ -85,7 +85,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
           cd ${{ secrets.DEPLOY_DIR }}
-          git pull origin develop
+          git pull --rebase origin develop
           docker-compose down
           docker-compose up -d --build
         EOF
