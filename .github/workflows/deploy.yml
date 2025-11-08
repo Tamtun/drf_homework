@@ -25,10 +25,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings
         run: |
-          pytest lms/tests.py users/tests.py
+          pytest
 
   deploy:
     name: Deploy to server
