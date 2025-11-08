@@ -13,9 +13,9 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_DB: lms_db
-          POSTGRES_USER: lms_user
-          POSTGRES_PASSWORD: lms_pass
+          POSTGRES_DB: drfhomework
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 2522
         ports:
           - 5432:5432
         options: >-
@@ -49,20 +49,22 @@ jobs:
     - name: Run migrations
       env:
         DJANGO_SETTINGS_MODULE: config.settings
-        POSTGRES_DB: lms_db
-        POSTGRES_USER: lms_user
-        POSTGRES_PASSWORD: lms_pass
-        POSTGRES_HOST: localhost
+        DB_NAME: drfhomework
+        DB_USER: postgres
+        DB_PASSWORD: 2522
+        DB_HOST: localhost
+        DB_PORT: 5432
       run: |
         python manage.py migrate
 
     - name: Run tests
       env:
         DJANGO_SETTINGS_MODULE: config.settings
-        POSTGRES_DB: lms_db
-        POSTGRES_USER: lms_user
-        POSTGRES_PASSWORD: lms_pass
-        POSTGRES_HOST: localhost
+        DB_NAME: drfhomework
+        DB_USER: postgres
+        DB_PASSWORD: 2522
+        DB_HOST: localhost
+        DB_PORT: 5432
       run: |
         pytest
 
